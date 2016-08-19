@@ -1,3 +1,6 @@
-/vendor
+**/.DS_STORE
+**/.DS_Store
+/nbproject/private/
+vendor/*
+!vendor/.gitkeep
 composer.lock
-nbproject
