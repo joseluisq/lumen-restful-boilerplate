@@ -43,7 +43,44 @@ class Handler extends ExceptionHandler {
    * @return \Illuminate\Http\Response
    */
   public function render($request, Exception $e) {
-    return parent::render($request, $e);
+    $status = 200;
+    $success = TRUE;
+    $response = NULL;
+
+    if ($e instanceof HttpResponseException) {
+      $success = FALSE;
+      $status = Response::HTTP_INTERNAL_SERVER_ERROR;
+      $response = $e->getResponse();
+    } elseif ($e instanceof MethodNotAllowedHttpException) {
+      $success = FALSE;
+      $status = Response::HTTP_METHOD_NOT_ALLOWED;
+      $e = new MethodNotAllowedHttpException([], 'The request method is not supported for the requested resource.', $e);
+    } elseif ($e instanceof NotFoundHttpException) {
+      $success = FALSE;
+      $status = Response::HTTP_NOT_FOUND;
+      $e = new NotFoundHttpException('The requested resource could not be found but may be available in the future.', $e);
+    } elseif ($e instanceof AuthorizationException) {
+      $success = FALSE;
+      $status = Response::HTTP_FORBIDDEN;
+      $e = new AuthorizationException('You do not have the necessary permissions for the resource.', $status);
+    } elseif ($e instanceof \Dotenv\Exception\ValidationException && $e->getResponse()) {
+      $success = FALSE;
+      $status = Response::HTTP_BAD_REQUEST;
+      $e = new \Dotenv\Exception\ValidationException('The server cannot or will not process the request due to an apparent client error.', $status, $e);
+      $response = $e->getResponse();
+    } elseif ($e) {
+      $success = FALSE;
+      $status = Response::HTTP_INTERNAL_SERVER_ERROR;
+      $e = new HttpException($status, 'It has occurred an unexpected server error.');
+    }
+
+    $res = response()->json([
+      'success' => $success,
+      'status' => $status,
+      'message' => $e->getMessage()
+      ], $status);
+
+    return $res;
   }
 
 }
