@@ -47,6 +47,10 @@ class Handler extends ExceptionHandler {
    * @return \Illuminate\Http\Response
    */
   public function render($request, Exception $e) {
+    if (env('APP_DEBUG')) {
+      return parent::render($request, $e);
+    }
+
     $status = 200;
     $success = TRUE;
     $response = NULL;
